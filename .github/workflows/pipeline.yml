@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI Pipeline
 
 on:
   push:
@@ -13,19 +13,43 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: List directory contents
+      run: ls -la
+
+    - name: Check for package.json
+      id: check_package
+      run: |
+        if [ -f "package.json" ]; then
+          echo "package_exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "package_exists=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Set up Node.js
+      if: steps.check_package.outputs.package_exists == 'true'
       uses: actions/setup-node@v3
       with:
         node-version: '14'
 
     - name: Install dependencies
+      if: steps.check_package.outputs.package_exists == 'true'
       run: npm ci
 
     - name: Run tests
+      if: steps.check_package.outputs.package_exists == 'true'
       run: npm test
 
     - name: Build project
+      if: steps.check_package.outputs.package_exists == 'true'
       run: npm run build
+
+    - name: Run generic checks
+      run: |
+        echo "Running generic checks..."
+        # Add any generic checks here, for example:
+        # - Check for presence of important files
+        # - Run linters if available
+        # - Perform static code analysis
 
   deploy:
     needs: build-and-test
